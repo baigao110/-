@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>时间显示与倒计时工具</title>
+    <style>
+        /* 全局重置与基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #0a0f1e;
+            color: #e0e0ff;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            padding-top: 70px;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* 科技感背景效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 150, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(100, 0, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(255, 0, 150, 0.05) 0%, transparent 50%);
+            z-index: -2;
+        }
+        
+        /* 网格背景 */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 150, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 150, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        /* 浮动倒计时组样式 */
+        .floating-countdown {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #00ccff;
+            border-radius: 15px;
+            margin: 20px auto;
+            max-width: 600px;
+            box-shadow: 
+                0 8px 32px rgba(0, 204, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            animation: float 6s ease-in-out infinite;
+            transition: animation-play-state 0.3s ease;
+        }
+        
+        .floating-countdown:hover {
+            animation-play-state: paused;
+        }
+        
+        .floating-countdown .countdown-container {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .floating-countdown .countdown-header {
+            font-family: 'Arial', sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ccff;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.7);
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .floating-countdown .countdown-content {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .floating-countdown .countdown-item {
+            text-align: center;
+            margin: 0 10px;
+        }
+        
+        .floating-countdown .countdown-number {
+            font-family: 'Courier New', monospace;
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(0, 204, 255, 0.7), 0 0 25px rgba(0, 204, 255, 0.5);
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #ffffff, #00ccff, #ffffff, #00ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .floating-countdown .countdown-label {
+            font-size: 14px;
+            color: #00ccff;
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.7);
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .floating-countdown .countdown-footer {
+            font-size: 14px;
+            color: #66ccff;
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.5);
+            margin-top: 15px;
+            background: linear-gradient(90deg, #66ccff, #00ccff, #66ccff, #00ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        /* 浮动动画 */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        /* 移动设备响应式样式 */
+        @media (max-width: 768px) {
+            .floating-countdown {
+                margin: 15px;
+            }
+            
+            .floating-countdown .countdown-header {
+                font-size: 18px;
+            }
+            
+            .floating-countdown .countdown-number {
+                font-size: 24px;
+            }
+            
+            .floating-countdown .countdown-item {
+                margin: 0 5px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .floating-countdown .countdown-header {
+                font-size: 16px;
+            }
+            
+            .floating-countdown .countdown-number {
+                font-size: 20px;
+            }
+            
+            .floating-countdown .countdown-label {
+                font-size: 12px;
+            }
+        }
+        
+        /* 时间横条样式 - 科技感设计 */
+        .time-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 10px 0;
+            background: rgba(10, 15, 30, 0.95);
+            border-bottom: 1px solid rgba(0, 150, 255, 0.3);
+            box-shadow: 
+                0 0 20px rgba(0, 150, 255, 0.2),
+                0 5px 25px rgba(0, 0, 0, 0.5);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .time-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ccff, transparent);
+            animation: scanline 3s linear infinite;
+        }
+        
+        .time-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .time-display-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+        
+        /* 主题选择器样式 */
+        .theme-selector {
+            position: relative;
+            flex-shrink: 0;
+            margin-left: 15px;
+        }
+        
+        .theme-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: rgba(0, 150, 255, 0.2);
+            border: 1px solid rgba(0, 150, 255, 0.5);
+            border-radius: 20px;
+            color: #00ccff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            -webkit-tap-highlight-color: rgba(0, 150, 255, 0.3);
+            touch-action: manipulation;
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .theme-btn:hover {
+            background: rgba(0, 150, 255, 0.4);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 2s ease infinite;
+        }
+        
+        .theme-icon {
+            font-size: 16px;
+        }
+        
+        .theme-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            border-radius: 8px;
+            padding: 8px 0;
+            min-width: 120px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+        
+        .theme-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .theme-option {
+            padding: 10px 16px;
+            color: #e0e0ff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: linear-gradient(90deg, #e0e0ff, #00ccff, #e0e0ff, #00ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .theme-option:hover {
+            background: rgba(0, 150, 255, 0.2);
+            color: #00ccff;
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 2s ease infinite;
+        }
+        
+        .theme-option.active {
+            background: rgba(0, 150, 255, 0.3);
+            color: #00ccff;
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 2s ease infinite;
+        }
+        
+        .time-display {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            color: #00ccff;
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.7), 0 0 10px rgba(0, 204, 255, 0.5);
+            letter-spacing: 1px;
+            padding: 5px 15px;
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            border-radius: 5px;
+            position: relative;
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .time-display::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ccff, #0066ff, #00ccff, #0066ff);
+            background-size: 400% 400%;
+            z-index: -1;
+            border-radius: 7px;
+            animation: gradientShift 4s ease infinite;
+            opacity: 0.5;
+        }
+        
+        /* 固定倒计时样式 */
+        .fixed-countdown {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 12px;
+            background: linear-gradient(90deg, rgba(0, 150, 255, 0.1), rgba(0, 150, 255, 0.05));
+            border-radius: 8px;
+            border: 1px solid rgba(0, 150, 255, 0.3);
+        }
+        
+        .fixed-countdown-time {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ccff;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(0, 20, 40, 0.3);
+            border-radius: 8px;
+            animation: gradientShift 4s ease infinite;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.7);
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .fixed-countdown-time.expired {
+            background: linear-gradient(90deg, #ff0000, #ff5500, #ff0000, #ff5500);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradientShift 4s ease infinite;
+        }
+        
+        .fixed-countdown-note {
+            font-size: 14px;
+            color: #66ccff;
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.5);
+            background: linear-gradient(90deg, #66ccff, #00ccff, #66ccff, #00ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        /* 工具容器通用样式 - 科技感设计 */
+        .tool-container {
+            max-width: 1200px;
+            margin: 0 auto 25px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(0, 150, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            background: rgba(15, 20, 40, 0.8);
+            border: 1px solid rgba(0, 150, 255, 0.2);
+        }
+        
+        .tool-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ccff, #0066ff, #00ccff);
+            background-size: 400% 400%;
+            animation: gradientShift 4s ease infinite;
+        }
+        
+        .tool-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.6),
+                0 0 25px rgba(0, 150, 255, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .tool-title {
+            font-size: 19px;
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-weight: 900;
+            letter-spacing: 1.2px;
+            text-shadow: 
+                3px 3px 5px rgba(0, 0, 0, 0.9),
+                -1px -1px 3px rgba(255, 255, 255, 0.5),
+                4px 4px 10px rgba(0, 0, 0, 0.7),
+                0 0 15px rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+            transition: all 0.4s ease;
+            padding-left: 25px;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+            text-transform: uppercase;
+            font-family: 'Arial', sans-serif;
+            transform: translateY(1px);
+            background: linear-gradient(90deg, #ffffff, #00ccff, #ffffff, #00ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .tool-title:hover {
+            color: #ffffff;
+            text-shadow: 
+                4px 4px 6px rgba(0, 0, 0, 0.9),
+                -1px -1px 3px rgba(255, 255, 255, 0.7),
+                5px 5px 12px rgba(0, 0, 0, 0.8),
+                0 0 25px rgba(255, 255, 255, 0.9);
+            transform: translateY(-3px) scale(1.03);
+            background: linear-gradient(90deg, #ffffff, #00ccff, #ffffff, #00ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 2s ease infinite;
+        }
+        
+        .tool-title::before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #00ccff;
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        
+        .tool-container.open .tool-title::before {
+            transform: translateY(-50%) rotate(90deg);
+        }
+        
+        .tool-content {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .tool-container.open .tool-content {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        /* 动画定义 */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes textGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .text-gradient {
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(200%); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 主容器样式 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(15, 20, 40, 0.8);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 
+                0 15px 35px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(0, 150, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00ccff, #0066ff, #00ccff);
+            background-size: 400% 400%;
+            animation: gradientShift 4s ease infinite;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            border-bottom: 2px solid rgba(0, 150, 255, 0.5);
+            padding-bottom: 15px;
+            font-size: 32px;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.7);
+            background: linear-gradient(90deg, #ffffff, #00ccff, #ffffff, #00ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        h2 {
+            color: #00ccff;
+            margin: 25px 0 15px;
+            font-size: 24px;
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.5);
+            border-bottom: 1px solid rgba(0, 150, 255, 0.3);
+            padding-bottom: 10px;
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        /* 倒计时容器样式 */
+        .countdown-container {
+            padding: 25px;
+        }
+        
+        .countdown-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ccff;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.7);
+            padding: 10px;
+            background: linear-gradient(90deg, rgba(0, 150, 255, 0.1), rgba(0, 150, 255, 0.05));
+            border-radius: 8px;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .countdown-display {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ccff;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(0, 20, 40, 0.3);
+            border-radius: 8px;
+            animation: gradientShift 4s ease infinite;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.7);
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, #00ccff, #66ccff, #00ccff, #66ccff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGradient 3s ease infinite;
+        }
+        
+        .countdown-display.expired {
+            background: linear-gradient(90deg, #ff0000, #ff5500, #ff0000, #ff5500);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradientShift 4s ease infinite;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                padding-top: 80px;
+            }
+            
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            h2 {
+                font-size: 20px;
+            }
+            
+            .time-display {
+                font-size: 14px;
+            }
+            
+            .countdown-display {
+                font-size: 32px;
+            }
+        }
+        
+        /* Toast提示样式 */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 20, 40, 0.95);
+            color: #00ccff;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 150, 255, 0.3);
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            text-shadow: 0 0 5px rgba(0, 204, 255, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        /* 浅色主题 */
+        body.light-theme {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        body.light-theme .container,
+        body.light-theme .tool-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        body.light-theme .time-bar {
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        body.light-theme .tool-title,
+        body.light-theme h1,
+        body.light-theme h2,
+        body.light-theme .countdown-title {
+            color: #0066cc;
+            text-shadow: none;
+        }
+        
+        body.light-theme .time-display,
+        body.light-theme .countdown-display {
+            color: #0066cc;
+            text-shadow: 0 0 5px rgba(0, 102, 204, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- 时间横条 -->
+    <div class="time-bar">
+        <div class="time-container">
+            <div class="time-display-wrapper">
+                <div class="time-display" id="time-display">加载中...</div>
+            </div>
+            <div class="theme-selector">
+                <button class="theme-btn" id="theme-btn">
+                    <span class="theme-icon">🌙</span>
+                    <span class="theme-text">深色模式</span>
+                </button>
+                <div class="theme-dropdown" id="theme-dropdown">
+                    <div class="theme-option" data-theme="dark">深色模式</div>
+                    <div class="theme-option" data-theme="light">浅色模式</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主容器 -->
+    <div class="container">
+        <h1>时间显示与倒计时工具</h1>
+        
+        <!-- 华都云境悦府收房倒计时 -->
+        <div class="countdown-container tool-container" id="countdown-container">
+            <div class="fixed-countdown" id="fixed-countdown">
+                <div class="fixed-countdown-time" id="fixed-countdown-time">正在计算...</div>
+                <div class="fixed-countdown-note" id="fixed-countdown-note">从页面加载时到目标时间的固定倒计时</div>
+            </div>
+            <div class="countdown-title">预计华都云境悦府收房实时倒计时(黄帝纪年4723年 公元2026年12月31日 星期四)</div>
+            <div class="countdown-display" id="countdown-display">
+                正在计算...
+            </div>
+        </div>
+        
+        <!-- GTA6倒计时 -->
+        <div class="countdown-container tool-container" id="gta6-countdown-container">
+            <div class="fixed-countdown" id="gta6-fixed-countdown">
+                <div class="fixed-countdown-time" id="gta6-fixed-countdown-time">正在计算...</div>
+                <div class="fixed-countdown-note" id="gta6-fixed-countdown-note">从页面加载时到目标时间的固定倒计时</div>
+            </div>
+            <div class="countdown-title">预计GTA6发售实时倒计时(黄帝纪年4723年 公元2026年11月19日 星期四)</div>
+            <div class="countdown-display" id="gta6-countdown-display">
+                正在计算...
+            </div>
+            <div class="fixed-countdown-note">首发平台 PS 5和微软Xbox Series X|S</div>
+        </div>
+    </div>
+    
+    <!-- Toast容器 -->
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // ======================= 主题切换功能 =======================
+        const themeBtn = document.getElementById('theme-btn');
+        const themeDropdown = document.getElementById('theme-dropdown');
+        const themeOptions = document.querySelectorAll('.theme-option');
+        const body = document.body;
+        
+        // 切换主题下拉菜单
+        themeBtn.addEventListener('click', function(event) {
+            event.stopPropagation();
+            themeDropdown.classList.toggle('show');
+        });
+        
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', function(event) {
+            if (!themeBtn.contains(event.target) && !themeDropdown.contains(event.target)) {
+                themeDropdown.classList.remove('show');
+            }
+        });
+        
+        // 主题选项点击事件
+        themeOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const theme = this.getAttribute('data-theme');
+                
+                // 移除所有主题类
+                body.classList.remove('light-theme', 'dark-theme');
+                
+                // 添加选中的主题类
+                if (theme === 'light') {
+                    body.classList.add('light-theme');
+                    themeBtn.innerHTML = '<span class="theme-icon">☀️</span><span class="theme-text">浅色模式</span>';
+                } else {
+                    body.classList.add('dark-theme');
+                    themeBtn.innerHTML = '<span class="theme-icon">🌙</span><span class="theme-text">深色模式</span>';
+                }
+                
+                // 保存主题设置到本地存储
+                localStorage.setItem('theme', theme);
+                
+                // 关闭下拉菜单
+                themeDropdown.classList.remove('show');
+                
+                // 显示主题切换提示
+                showToast(`已切换到${theme === 'light' ? '浅色' : '深色'}模式`);
+            });
+        });
+        
+        // 加载保存的主题设置
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                body.classList.add('light-theme');
+                themeBtn.innerHTML = '<span class="theme-icon">☀️</span><span class="theme-text">浅色模式</span>';
+            } else {
+                body.classList.add('dark-theme');
+                themeBtn.innerHTML = '<span class="theme-icon">🌙</span><span class="theme-text">深色模式</span>';
+            }
+        }
+        
+        // 初始化加载主题
+        loadTheme();
+        
+        // ======================= 浏览器标题逐字显示消失循环效果 =======================
+        
+        const titleMessages = [
+            "华都云境悦府收房倒计时 ⏳",
+            "GTA6游戏发售倒计时 🎮",
+            "时间显示与倒计时工具 ⏰",
+            "珍惜每一分每一秒 ⌛",
+            "欢迎访问本网页",
+            "等你探索...",
+            "本网页大部分内容由AI生成！",
+            "持续更新...",
+            "如有需求和问题",
+            "请联系",
+            "QQ：344497165",
+            "微信：woshibdj"
+        ];
+        
+        let currentTitleIndex = 0;
+        let currentCharIndex = 0;
+        let isRunning = true;
+        
+        function updateTitle() {
+            if (!isRunning) return;
+            
+            const message = titleMessages[currentTitleIndex];
+            
+            if (currentCharIndex < message.length) {
+                currentCharIndex++;
+                document.title = message.substring(0, currentCharIndex);
+                setTimeout(updateTitle, 150);
+            } else {
+                setTimeout(function() {
+                    if (!isRunning) return;
+                    deleteChar();
+                }, 1500);
+            }
+        }
+        
+        function deleteChar() {
+            if (!isRunning) return;
+            
+            const message = titleMessages[currentTitleIndex];
+            
+            if (currentCharIndex > 0) {
+                currentCharIndex--;
+                document.title = message.substring(0, currentCharIndex);
+                setTimeout(deleteChar, 150);
+            } else {
+                // 立即切换到下一条消息，不显示空标题
+                currentTitleIndex = (currentTitleIndex + 1) % titleMessages.length;
+                currentCharIndex = 0;
+                updateTitle();
+            }
+        }
+        
+        // 立即开始动画
+        updateTitle();
+        
+        // Toast提示功能
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, duration);
+        }
+        
+        // ======================= 时间显示功能 =======================
+        
+        // 获取中文星期几
+        function getChineseWeekday(date) {
+            const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            return weekdays[date.getDay()];
+        }
+        
+        // 获取黄帝纪年
+        function getHuangdiYear() {
+            const huangdiStartYear = -2697;
+            const currentYear = new Date().getFullYear();
+            return currentYear - huangdiStartYear;
+        }
+        
+        // 更新时间显示
+        function updateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const weekday = getChineseWeekday(now);
+            const huangdiYear = getHuangdiYear();
+            
+            // 针对移动设备优化时间显示格式
+            let timeString = '';
+            if (window.innerWidth <= 768) {
+                timeString = `(黄帝${huangdiYear}年)${year}年${month}月${day}日${weekday}${hours}:${minutes}:${seconds}`;
+            } else {
+                timeString = `(黄帝纪年${huangdiYear}年)${year}年${month}月${day}日 ${weekday} ${hours}:${minutes}:${seconds}`;
+            }
+            
+            // 更新顶部时间横条
+            const topTimeElement = document.getElementById('time-display');
+            if (topTimeElement) {
+                topTimeElement.textContent = timeString;
+            }
+        }
+        
+        // 初始化时间显示
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // ======================= 倒计时功能 =======================
+        
+        // 目标日期
+        const countdownTarget = new Date(2026, 11, 31, 0, 0, 0); // 2026-12-31
+        const gta6CountdownTarget = new Date(2026, 10, 19, 0, 0, 0); // 2026-11-19
+        
+        // 页面加载时间（用于固定倒计时）
+        const pageLoadTime = new Date();
+        
+        // 华都云境悦府倒计时组
+        let countdownMode = 1;
+        let fixedCountdownMode = 1;
+        
+        // GTA6倒计时组
+        let gta6CountdownMode = 1;
+        let fixedGta6CountdownMode = 1;
+        
+        // 初始化所有倒计时
+        function initializeAllCountdowns() {
+            try {
+                updateAllCountdowns();
+                calculateAndDisplayFixedCountdowns();
+                setInterval(updateAllCountdowns, 1000);
+            } catch (error) {
+                console.error("倒计时初始化失败:", error);
+            }
+        }
+        
+        // 更新所有倒计时
+        function updateAllCountdowns() {
+            updateCountdown();
+            updateGta6Countdown();
+        }
+        
+        // 计算并显示固定倒计时
+        function calculateAndDisplayFixedCountdowns() {
+            const countdownDiff = countdownTarget.getTime() - pageLoadTime.getTime();
+            const gta6Diff = gta6CountdownTarget.getTime() - pageLoadTime.getTime();
+            
+            updateFixedCountdownDisplay(countdownDiff, 'fixed-countdown-time', 'fixed-countdown-note', fixedCountdownMode, "已拿房", pageLoadTime);
+            updateFixedCountdownDisplay(gta6Diff, 'gta6-fixed-countdown-time', 'gta6-fixed-countdown-note', fixedGta6CountdownMode, "GTA6 游戏已发售", pageLoadTime);
+        }
+        
+        // 更新固定倒计时显示
+        function updateFixedCountdownDisplay(diff, timeElementId, noteElementId, mode, pastText, startTime) {
+            const timeElement = document.getElementById(timeElementId);
+            const noteElement = document.getElementById(noteElementId);
+            
+            if (!timeElement || !noteElement) {
+                return;
+            }
+            
+            const formattedTime = formatFixedCountdown(diff, mode, pastText);
+            const formattedStartTime = formatDateTime(startTime);
+            
+            timeElement.textContent = formattedTime;
+            noteElement.textContent = `从 ${formattedStartTime} 到目标时间的固定倒计时`;
+            
+            if (diff < 0) {
+                timeElement.classList.add('expired');
+            } else {
+                timeElement.classList.remove('expired');
+            }
+        }
+        
+        // 格式化固定倒计时显示
+        function formatFixedCountdown(diff, mode, pastText) {
+            if (diff === 0) {
+                return "目标时间已到！";
+            }
+            
+            const isPast = diff < 0;
+            const absDiff = Math.abs(diff);
+            
+            const totalSeconds = Math.floor(absDiff / 1000);
+            const totalMinutes = Math.floor(totalSeconds / 60);
+            const totalHours = Math.floor(totalMinutes / 60);
+            const totalDays = Math.floor(totalHours / 24);
+            const totalWeeks = Math.floor(totalDays / 7);
+            const totalMonths = Math.floor(totalDays / 30.4375);
+            const totalYears = Math.floor(totalDays / 365.25);
+            
+            const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
+            
+            let displayText = "";
+            
+            switch(mode) {
+                case 0:
+                    displayText = !isPast ? `${days}天 ${hours}时 ${minutes}分 ${seconds}秒` : `${pastText} ${days}天 ${hours}时 ${minutes}分 ${seconds}秒`;
+                    break;
+                case 1:
+                    displayText = !isPast ? `${totalYears}年 ${totalMonths % 12}月 ${days % 30}天` : `${pastText} ${totalYears}年 ${totalMonths % 12}月 ${days % 30}天`;
+                    break;
+                case 2:
+                    displayText = !isPast ? `${totalHours}时 ${minutes}分 ${seconds}秒` : `${pastText} ${totalHours}时 ${minutes}分 ${seconds}秒`;
+                    break;
+                case 3:
+                    displayText = !isPast ? `${totalWeeks}周 ${days % 7}天` : `${pastText} ${totalWeeks}周 ${days % 7}天`;
+                    break;
+                case 4:
+                    displayText = !isPast ? `${totalSeconds}秒` : `${pastText} ${totalSeconds}秒`;
+                    break;
+                case 5:
+                    displayText = !isPast ? `${totalMinutes}分钟` : `${pastText} ${totalMinutes}分钟`;
+                    break;
+                case 6:
+                    displayText = !isPast ? `${totalHours}小时` : `${pastText} ${totalHours}小时`;
+                    break;
+                case 7:
+                    displayText = !isPast ? `${totalDays}天` : `${pastText} ${totalDays}天`;
+                    break;
+            }
+            
+            return displayText;
+        }
+        
+        // 格式化日期时间
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+        
+        // 更新华都云境悦府实时倒计时显示
+        function updateCountdown() {
+            try {
+                const now = new Date();
+                const diff = countdownTarget.getTime() - now.getTime();
+                const displayElement = document.getElementById('countdown-display');
+                if (displayElement) {
+                    displayElement.textContent = formatRealTimeCountdown(diff, countdownMode, "已拿房");
+                    if (diff < 0) {
+                        displayElement.classList.add('expired');
+                    } else {
+                        displayElement.classList.remove('expired');
+                    }
+                }
+            } catch (error) {
+                console.error("更新华都云境悦府倒计时出错:", error);
+                const displayElement = document.getElementById('countdown-display');
+                if (displayElement) {
+                    displayElement.textContent = "计算错误";
+                }
+            }
+        }
+        
+        // 更新GTA6实时倒计时显示
+        function updateGta6Countdown() {
+            try {
+                const now = new Date();
+                const diff = gta6CountdownTarget.getTime() - now.getTime();
+                const displayElement = document.getElementById('gta6-countdown-display');
+                if (displayElement) {
+                    displayElement.textContent = formatRealTimeCountdown(diff, gta6CountdownMode, "已发售");
+                    if (diff < 0) {
+                        displayElement.classList.add('expired');
+                    } else {
+                        displayElement.classList.remove('expired');
+                    }
+                }
+            } catch (error) {
+                console.error("更新GTA6倒计时出错:", error);
+                const displayElement = document.getElementById('gta6-countdown-display');
+                if (displayElement) {
+                    displayElement.textContent = "计算错误";
+                }
+            }
+        }
+        
+        // 格式化实时倒计时显示
+        function formatRealTimeCountdown(diff, mode, pastText) {
+            try {
+                const absDiff = Math.abs(diff);
+                const totalSeconds = Math.floor(absDiff / 1000);
+                const totalMinutes = Math.floor(totalSeconds / 60);
+                const totalHours = Math.floor(totalMinutes / 60);
+                const totalDays = Math.floor(totalHours / 24);
+                const totalWeeks = Math.floor(totalDays / 7);
+                const totalMonths = Math.floor(totalDays / 30.4375);
+                const totalYears = Math.floor(totalDays / 365.25);
+                
+                const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
+                
+                let displayText = "";
+                
+                switch(mode) {
+                    case 0:
+                        displayText = diff >= 0 ? `${days}天 ${hours}时 ${minutes}分 ${seconds}秒` : `${pastText} ${days}天 ${hours}时 ${minutes}分 ${seconds}秒`;
+                        break;
+                    case 1:
+                        displayText = diff >= 0 ? `${totalYears}年 ${totalMonths % 12}月 ${Math.abs(days) % 30}天` : `${pastText} ${Math.abs(totalYears)}年 ${totalMonths % 12}月 ${Math.abs(days) % 30}天`;
+                        break;
+                    case 2:
+                        displayText = diff >= 0 ? `${totalHours}时 ${minutes}分 ${seconds}秒` : `${pastText} ${Math.abs(totalHours)}时 ${minutes}分 ${seconds}秒`;
+                        break;
+                    case 3:
+                        displayText = diff >= 0 ? `${totalWeeks}周 ${Math.abs(days) % 7}天` : `${pastText} ${Math.abs(totalWeeks)}周 ${Math.abs(days) % 7}天`;
+                        break;
+                    case 4:
+                        displayText = diff >= 0 ? `${totalSeconds}秒` : `${pastText} ${Math.abs(totalSeconds)}秒`;
+                        break;
+                    case 5:
+                        displayText = diff >= 0 ? `${totalMinutes}分钟` : `${pastText} ${Math.abs(totalMinutes)}分钟`;
+                        break;
+                    case 6:
+                        displayText = diff >= 0 ? `${totalHours}小时` : `${pastText} ${Math.abs(totalHours)}小时`;
+                        break;
+                    case 7:
+                        displayText = diff >= 0 ? `${totalDays}天` : `${pastText} ${Math.abs(totalDays)}天`;
+                        break;
+                }
+                
+                return displayText;
+            } catch (error) {
+                console.error("格式化实时倒计时出错:", error);
+                return "计算错误";
+            }
+        }
+        
+        // 华都云境悦府倒计时组点击切换模式
+        document.getElementById('countdown-container').addEventListener('click', function(e) {
+            if (e.target.closest('.countdown-title') || e.target.closest('.fixed-countdown-note')) return;
+            
+            countdownMode = (countdownMode + 1) % 8;
+            fixedCountdownMode = countdownMode;
+            updateAllCountdowns();
+            calculateAndDisplayFixedCountdowns();
+        });
+        
+        // GTA6倒计时组点击切换模式
+        document.getElementById('gta6-countdown-container').addEventListener('click', function(e) {
+            if (e.target.closest('.countdown-title') || e.target.closest('.fixed-countdown-note')) return;
+            
+            gta6CountdownMode = (gta6CountdownMode + 1) % 8;
+            fixedGta6CountdownMode = gta6CountdownMode;
+            updateAllCountdowns();
+            calculateAndDisplayFixedCountdowns();
+        });
+        
+        // 初始化倒计时
+        initializeAllCountdowns();
+    </script>
+    <footer style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(10, 15, 30, 0.8); border-top: 1px solid rgba(0, 150, 255, 0.3); color: #66ccff; font-size: 14px; border-radius: 0 0 15px 15px;">
+        <p style="font-size: 16px; font-weight: bold; background: linear-gradient(90deg, #66ccff, #00ccff, #66ccff, #00ccff); background-size: 400% 400%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: textGradient 3s ease infinite;">本页面最新整理时间：黄帝纪年4723年公元 2026-04-19 11:15 星期日</p><br>
+        <p style="background: linear-gradient(90deg, #66ccff, #00ccff, #66ccff, #00ccff); background-size: 400% 400%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: textGradient 3s ease infinite;">© 黄帝纪年4723年公元 2026 时间显示与倒计时工具 | 版权所有</p>
+    </footer>
+</body>
+</html>
